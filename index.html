@@ -135,7 +135,17 @@
     ];
 
     const randomTheme = artThemes[Math.floor(Math.random() * artThemes.length)];
-    const imgUrl = `https://source.unsplash.com/1600x900/?${encodeURIComponent(randomTheme)},art`;
+    const collections = [
+      "1065976",  // Abstract
+      "1132517",  // Modern art
+      "142376",   // Minimal
+      "827743",   // Surreal
+      "381614",   // Digital
+      "895539"    // Expressionism
+    ];
+    const randomCollection = collections[Math.floor(Math.random() * collections.length)];
+    const imgUrl = `https://images.unsplash.com/photo-${Math.floor(Math.random() * 1000000)}?crop=entropy&cs=tinysrgb&fit=crop&w=1600&h=900&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MHx8YXJ0fDB8fDB8fA%3D%3D`;
+    image.src = imgUrl;
 
     image.src = imgUrl;
 
