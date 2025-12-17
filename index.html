@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artab Museum Startpage</title>
 
   <style>
@@ -104,7 +104,27 @@
   </div>
 
   <script>
-    async function loadArtIC() {
+    const PROXY = "https://cors.isomorphic-git.org/";
+    const MET_API = "https://collectionapi.metmuseum.org/public/collection/v1";
+
+    let objectIDs = [];
+
+    async function fetchObjectIDs() {
+      const url =
+        PROXY +
+        `${MET_API}/search?hasImages=true&isPublicDomain=true&q=painting`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data.objectIDs || data.objectIDs.length === 0) {
+        throw new Error("No object IDs returned");
+      }
+
+      objectIDs = data.objectIDs;
+    }
+
+    async function loadRandomPainting() {
       const loader = document.getElementById("loader");
       const img = document.getElementById("artImage");
 
@@ -113,39 +133,34 @@
       img.style.opacity = "0";
 
       try {
-        const randomPage = Math.floor(Math.random() * 100) + 1;
-
-        const url =
-          `https://api.artic.edu/api/v1/artworks` +
-          `?page=${randomPage}` +
-          `&limit=1` +
-          `&fields=title,artist_title,image_id,credit_line` +
-          `&has_image=1`;
-
-        const res = await fetch(url);
-        const json = await res.json();
-
-        if (!json.data || !json.data.length) {
-          throw new Error("No artwork returned");
+        if (objectIDs.length === 0) {
+          await fetchObjectIDs();
         }
 
-        const art = json.data[0];
+        const index = Math.floor(Math.random() * objectIDs.length);
+        const objectID = objectIDs.splice(index, 1)[0];
 
-        if (!art.image_id) {
-          throw new Error("Artwork has no image");
+        const res = await fetch(
+          PROXY + `${MET_API}/objects/${objectID}`
+        );
+        const art = await res.json();
+
+        // Hard reject non-paintings or missing images
+        if (
+          art.classification !== "Paintings" ||
+          !art.primaryImageSmall
+        ) {
+          return loadRandomPainting();
         }
-
-        const imageUrl =
-          `https://www.artic.edu/iiif/2/${art.image_id}/full/843,/0/default.jpg`;
 
         document.getElementById("title").textContent =
           art.title || "Untitled";
 
         document.getElementById("artist").textContent =
-          art.artist_title || "Unknown artist";
+          art.artistDisplayName || "Unknown artist";
 
         document.getElementById("museum").textContent =
-          art.credit_line || "Art Institute of Chicago";
+          "The Metropolitan Museum of Art";
 
         img.onload = () => {
           loader.style.display = "none";
@@ -156,7 +171,7 @@
           loader.textContent = "Image failed to load";
         };
 
-        img.src = imageUrl;
+        img.src = art.primaryImageSmall;
 
       } catch (err) {
         console.error(err);
@@ -167,7 +182,7 @@
       }
     }
 
-    loadArtIC();
+    loadRandomPainting();
   </script>
 </body>
 </html>
