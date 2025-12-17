@@ -20,12 +20,6 @@
 
     .gallery {
       text-align: center;
-      animation: fadeIn 1.2s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
     }
 
     .frame {
@@ -110,35 +104,7 @@
   </div>
 
   <script>
-    const PAINTING_DEPARTMENTS = [
-      11, // European Paintings
-      21, // Modern Art
-      1   // American Wing
-    ];
-
-    let objectIDPool = [];
-
-    async function fetchPaintingIDs() {
-      const dept =
-        PAINTING_DEPARTMENTS[
-          Math.floor(Math.random() * PAINTING_DEPARTMENTS.length)
-        ];
-
-      const url =
-        `https://collectionapi.metmuseum.org/public/collection/v1/search` +
-        `?hasImages=true&isPublicDomain=true&departmentId=${dept}`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (!data.objectIDs || data.objectIDs.length === 0) {
-        throw new Error("No objects returned from Met API");
-      }
-
-      objectIDPool = data.objectIDs;
-    }
-
-    async function loadRandomPainting() {
+    async function loadArtIC() {
       const loader = document.getElementById("loader");
       const img = document.getElementById("artImage");
 
@@ -147,37 +113,39 @@
       img.style.opacity = "0";
 
       try {
-        if (objectIDPool.length === 0) {
-          await fetchPaintingIDs();
+        const randomPage = Math.floor(Math.random() * 100) + 1;
+
+        const url =
+          `https://api.artic.edu/api/v1/artworks` +
+          `?page=${randomPage}` +
+          `&limit=1` +
+          `&fields=title,artist_title,image_id,credit_line` +
+          `&has_image=1`;
+
+        const res = await fetch(url);
+        const json = await res.json();
+
+        if (!json.data || !json.data.length) {
+          throw new Error("No artwork returned");
         }
 
-        const randomIndex =
-          Math.floor(Math.random() * objectIDPool.length);
+        const art = json.data[0];
 
-        const objectID =
-          objectIDPool.splice(randomIndex, 1)[0];
-
-        const res = await fetch(
-          `https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectID}`
-        );
-        const art = await res.json();
-
-        // HARD FILTER: paintings only
-        if (
-          art.classification !== "Paintings" ||
-          !art.primaryImageSmall
-        ) {
-          return loadRandomPainting();
+        if (!art.image_id) {
+          throw new Error("Artwork has no image");
         }
+
+        const imageUrl =
+          `https://www.artic.edu/iiif/2/${art.image_id}/full/843,/0/default.jpg`;
 
         document.getElementById("title").textContent =
           art.title || "Untitled";
 
         document.getElementById("artist").textContent =
-          art.artistDisplayName || "Unknown artist";
+          art.artist_title || "Unknown artist";
 
         document.getElementById("museum").textContent =
-          "The Metropolitan Museum of Art";
+          art.credit_line || "Art Institute of Chicago";
 
         img.onload = () => {
           loader.style.display = "none";
@@ -188,7 +156,7 @@
           loader.textContent = "Image failed to load";
         };
 
-        img.src = art.primaryImageSmall;
+        img.src = imageUrl;
 
       } catch (err) {
         console.error(err);
@@ -199,7 +167,7 @@
       }
     }
 
-    loadRandomPainting();
+    loadArtIC();
   </script>
 </body>
 </html>
