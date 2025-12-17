@@ -39,6 +39,7 @@
       max-height: 65vh;
       overflow: hidden;
       animation: fadeInArt 1.5s ease;
+      position: relative;
     }
 
     @keyframes fadeInArt {
@@ -55,9 +56,14 @@
     }
 
     .loader {
-      padding: 24px;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-size: 14px;
       color: #aaa;
+      background: #111;
     }
 
     .caption {
@@ -126,10 +132,12 @@
       const loader = document.getElementById("loader");
       const img = document.getElementById("artImage");
 
-      try {
-        loader.style.display = "block";
-        img.style.opacity = "0";
+      loader.style.display = "flex";
+      img.style.opacity = "0";
+      img.onload = null;
+      img.onerror = null;
 
+      try {
         const randomPage = Math.floor(Math.random() * 100) + 1;
 
         const url =
@@ -150,25 +158,23 @@
         const imgUrl =
           `https://www.artic.edu/iiif/2/${art.image_id}/full/843,/0/default.jpg`;
 
+        document.getElementById("title").textContent =
+          art.title || "Untitled";
+        document.getElementById("artist").textContent =
+          art.artist_title || "Unknown artist";
+        document.getElementById("museum").textContent =
+          art.credit_line || "Art Institute of Chicago";
+
         img.onload = () => {
           loader.style.display = "none";
           img.style.opacity = "1";
         };
 
         img.onerror = () => {
-          if (retries > 0) loadRandomArt(retries - 1);
+          loader.textContent = "Image failed to load";
         };
 
         img.src = imgUrl;
-
-        document.getElementById("title").textContent =
-          art.title || "Untitled";
-
-        document.getElementById("artist").textContent =
-          art.artist_title || "Unknown artist";
-
-        document.getElementById("museum").textContent =
-          art.credit_line || "Art Institute of Chicago";
 
       } catch (err) {
         console.error(err);
