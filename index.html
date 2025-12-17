@@ -66,6 +66,7 @@
       border-radius: 3px;
       font-size: 14px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      min-width: 280px;
     }
 
     .caption strong {
@@ -109,56 +110,64 @@
   </div>
 
   <script>
-    const departments = [
+    const PAINTING_DEPARTMENTS = [
       11, // European Paintings
-      9,  // Drawings & Prints
       21, // Modern Art
-      1,  // American Decorative Arts (paintings included)
-      6   // Asian Art
+      1   // American Wing
     ];
 
-    let cachedIDs = [];
+    let objectIDPool = [];
 
-    async function fetchIDs() {
+    async function fetchPaintingIDs() {
       const dept =
-        departments[Math.floor(Math.random() * departments.length)];
+        PAINTING_DEPARTMENTS[
+          Math.floor(Math.random() * PAINTING_DEPARTMENTS.length)
+        ];
 
       const url =
         `https://collectionapi.metmuseum.org/public/collection/v1/search` +
-        `?hasImages=true&isPublicDomain=true&medium=Paintings&departmentId=${dept}`;
+        `?hasImages=true&isPublicDomain=true&departmentId=${dept}`;
 
       const res = await fetch(url);
       const data = await res.json();
 
-      if (!data.objectIDs || !data.objectIDs.length) {
-        throw new Error("No objects found");
+      if (!data.objectIDs || data.objectIDs.length === 0) {
+        throw new Error("No objects returned from Met API");
       }
 
-      cachedIDs = data.objectIDs;
+      objectIDPool = data.objectIDs;
     }
 
-    async function loadRandomArt() {
+    async function loadRandomPainting() {
       const loader = document.getElementById("loader");
       const img = document.getElementById("artImage");
 
       loader.style.display = "flex";
+      loader.textContent = "Loading artwork…";
       img.style.opacity = "0";
 
       try {
-        if (!cachedIDs.length) {
-          await fetchIDs();
+        if (objectIDPool.length === 0) {
+          await fetchPaintingIDs();
         }
 
-        const randomIndex = Math.floor(Math.random() * cachedIDs.length);
-        const objectID = cachedIDs.splice(randomIndex, 1)[0];
+        const randomIndex =
+          Math.floor(Math.random() * objectIDPool.length);
+
+        const objectID =
+          objectIDPool.splice(randomIndex, 1)[0];
 
         const res = await fetch(
           `https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectID}`
         );
         const art = await res.json();
 
-        if (!art.primaryImageSmall) {
-          return loadRandomArt();
+        // HARD FILTER: paintings only
+        if (
+          art.classification !== "Paintings" ||
+          !art.primaryImageSmall
+        ) {
+          return loadRandomPainting();
         }
 
         document.getElementById("title").textContent =
@@ -175,15 +184,22 @@
           img.style.opacity = "1";
         };
 
+        img.onerror = () => {
+          loader.textContent = "Image failed to load";
+        };
+
         img.src = art.primaryImageSmall;
 
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
         loader.textContent = "Artwork unavailable";
+        document.getElementById("title").textContent = "Artwork unavailable";
+        document.getElementById("artist").textContent = "";
+        document.getElementById("museum").textContent = "";
       }
     }
 
-    loadRandomArt();
+    loadRandomPainting();
   </script>
 </body>
 </html>
