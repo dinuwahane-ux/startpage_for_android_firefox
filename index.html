@@ -15,7 +15,6 @@
       background: url("bg.jpg") center / cover no-repeat fixed;
       font-family: "Segoe UI", sans-serif;
       color: #eee;
-      overflow: hidden;
     }
 
     .gallery {
@@ -59,26 +58,11 @@
       display: inline-block;
       border-radius: 3px;
       font-size: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       min-width: 280px;
     }
 
     .caption strong {
       font-size: 15px;
-    }
-
-    .footer {
-      position: absolute;
-      bottom: 20px;
-      display: flex;
-      gap: 22px;
-    }
-
-    .footer a {
-      text-decoration: none;
-      color: #111;
-      font-size: 15px;
-      font-weight: 500;
     }
   </style>
 </head>
@@ -97,62 +81,54 @@
     </div>
   </div>
 
-  <div class="footer">
-    <a href="https://www.youtube.com">YouTube</a>
-    <a href="https://www.instagram.com">Instagram</a>
-    <a href="https://chat.openai.com">ChatGPT</a>
-  </div>
-
   <script>
-    const PROXY = "https://cors.isomorphic-git.org/";
-    const MET_API = "https://collectionapi.metmuseum.org/public/collection/v1";
+    const PROXY =
+      "https://met-proxy.dinu-wahane.workers.dev/?url=";
 
-    let objectIDs = [];
+    const MET_API =
+      "https://collectionapi.metmuseum.org/public/collection/v1";
 
-    async function fetchObjectIDs() {
-      const url =
-        PROXY +
-        `${MET_API}/search?hasImages=true&isPublicDomain=true&q=painting`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (!data.objectIDs || data.objectIDs.length === 0) {
-        throw new Error("No object IDs returned");
-      }
-
-      objectIDs = data.objectIDs;
+    function proxied(url) {
+      return PROXY + encodeURIComponent(url);
     }
 
-    async function loadRandomPainting() {
+    async function loadArtwork() {
       const loader = document.getElementById("loader");
       const img = document.getElementById("artImage");
 
       loader.style.display = "flex";
-      loader.textContent = "Loading artwork…";
       img.style.opacity = "0";
 
       try {
-        if (objectIDs.length === 0) {
-          await fetchObjectIDs();
+        // 1) Search paintings
+        const searchRes = await fetch(
+          proxied(`${MET_API}/search?hasImages=true&q=painting`)
+        );
+        const searchData = await searchRes.json();
+
+        const ids = searchData.objectIDs;
+        if (!ids || !ids.length) {
+          throw new Error("No artworks found");
         }
 
-        const index = Math.floor(Math.random() * objectIDs.length);
-        const objectID = objectIDs.splice(index, 1)[0];
+        // 2) Pick random artwork
+        const objectID =
+          ids[Math.floor(Math.random() * ids.length)];
 
-        const res = await fetch(
-          PROXY + `${MET_API}/objects/${objectID}`
+        // 3) Fetch artwork details
+        const artRes = await fetch(
+          proxied(`${MET_API}/objects/${objectID}`)
         );
-        const art = await res.json();
+        const art = await artRes.json();
 
-        // Hard reject non-paintings or missing images
         if (
           art.classification !== "Paintings" ||
           !art.primaryImageSmall
         ) {
-          return loadRandomPainting();
+          return loadArtwork(); // try another
         }
 
+        // 4) Update caption immediately
         document.getElementById("title").textContent =
           art.title || "Untitled";
 
@@ -162,6 +138,7 @@
         document.getElementById("museum").textContent =
           "The Metropolitan Museum of Art";
 
+        // 5) Load image
         img.onload = () => {
           loader.style.display = "none";
           img.style.opacity = "1";
@@ -176,13 +153,10 @@
       } catch (err) {
         console.error(err);
         loader.textContent = "Artwork unavailable";
-        document.getElementById("title").textContent = "Artwork unavailable";
-        document.getElementById("artist").textContent = "";
-        document.getElementById("museum").textContent = "";
       }
     }
 
-    loadRandomPainting();
+    loadArtwork();
   </script>
 </body>
 </html>
