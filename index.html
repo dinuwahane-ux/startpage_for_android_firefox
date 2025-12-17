@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artab Museum Startpage</title>
 
   <style>
@@ -16,11 +16,6 @@
       background: url("bg.jpg") center / cover no-repeat fixed;
       font-family: "Segoe UI", sans-serif;
       color: #eee;
-      overflow: hidden;
-    }
-
-    .gallery {
-      text-align: center;
     }
 
     .frame {
@@ -38,7 +33,7 @@
       height: auto;
       display: block;
       opacity: 0;
-      transition: opacity 0.8s ease;
+      transition: opacity 0.6s ease;
     }
 
     .loader {
@@ -48,7 +43,6 @@
       justify-content: center;
       align-items: center;
       color: #aaa;
-      font-size: 14px;
       background: #111;
     }
 
@@ -56,156 +50,103 @@
       background: rgba(40,40,40,0.9);
       margin-top: 10px;
       padding: 10px 14px;
-      text-align: left;
-      display: inline-block;
       border-radius: 3px;
       font-size: 14px;
       min-width: 280px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
 
-    .caption strong {
-      font-size: 15px;
-    }
-
-    /* Footer links */
     .footer {
       position: absolute;
       bottom: 20px;
       display: flex;
       gap: 22px;
-      justify-content: center;
-      align-items: center;
     }
 
     .footer a {
       text-decoration: none;
       color: #111;
-      font-weight: 500;
       font-size: 15px;
-      transition: color 0.3s ease, transform 0.2s ease;
-    }
-
-    .footer a:hover {
-      color: #333;
-      transform: translateY(-1px);
+      font-weight: 500;
     }
   </style>
 </head>
 
 <body>
-  <div class="gallery">
-    <div class="frame">
-      <div id="loader" class="loader">Loading artwork…</div>
-      <img id="artImage" alt="">
-    </div>
-
-    <div class="caption">
-      <strong id="title">Loading…</strong><br>
-      <span id="artist"></span><br>
-      <span id="museum"></span>
-    </div>
+  <div class="frame">
+    <div id="loader" class="loader">Loading artwork…</div>
+    <img id="artImage">
   </div>
 
-  <!-- Footer links restored -->
+  <div class="caption">
+    <strong id="title">Loading…</strong><br>
+    <span id="artist"></span><br>
+    <span>Wikimedia Commons</span>
+  </div>
+
   <div class="footer">
-    <a href="https://www.youtube.com" target="_self">YouTube</a>
-    <a href="https://www.instagram.com" target="_self">Instagram</a>
-    <a href="https://chat.openai.com" target="_self">ChatGPT</a>
+    <a href="https://www.youtube.com">YouTube</a>
+    <a href="https://www.instagram.com">Instagram</a>
+    <a href="https://chat.openai.com">ChatGPT</a>
   </div>
 
   <script>
-    const PROXY =
-      "https://met-proxy.dinu-wahane.workers.dev/?url=";
+    const CATEGORIES = [
+      "Paintings_by_Vincent_van_Gogh",
+      "Paintings_by_Claude_Monet",
+      "Paintings_by_Rembrandt",
+      "Paintings_by_Johannes_Vermeer",
+      "Impressionist_paintings",
+      "Post-Impressionist_paintings",
+      "Renaissance_paintings"
+    ];
 
-    const MET_API =
-      "https://collectionapi.metmuseum.org/public/collection/v1";
-
-    const HIGHLIGHT_WEIGHT = 0.3; // 30% famous bias
-
-    function proxied(url) {
-      return PROXY + encodeURIComponent(url);
-    }
-
-    async function getCachedIDs(key, url) {
-      const cached = localStorage.getItem(key);
-      if (cached) return JSON.parse(cached);
-
-      const res = await fetch(proxied(url));
-      const data = await res.json();
-
-      if (!data.objectIDs || !data.objectIDs.length) {
-        throw new Error("No artworks found");
-      }
-
-      // Trim for performance
-      const trimmed = data.objectIDs.slice(0, 2000);
-      localStorage.setItem(key, JSON.stringify(trimmed));
-      return trimmed;
-    }
-
-    async function loadArtwork() {
+    async function loadPainting() {
       const loader = document.getElementById("loader");
       const img = document.getElementById("artImage");
 
-      loader.style.display = "flex";
-      img.style.opacity = "0";
+      const category =
+        CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+
+      const url =
+        "https://commons.wikimedia.org/w/api.php" +
+        "?origin=*" +
+        "&action=query" +
+        "&generator=categorymembers" +
+        `&gcmtitle=Category:${category}` +
+        "&gcmtype=file" +
+        "&gcmlimit=50" +
+        "&prop=imageinfo" +
+        "&iiprop=url|extmetadata" +
+        "&format=json";
 
       try {
-        const useHighlight = Math.random() < HIGHLIGHT_WEIGHT;
+        const res = await fetch(url);
+        const data = await res.json();
 
-        const ids = useHighlight
-          ? await getCachedIDs(
-              "met_highlights",
-              `${MET_API}/search?hasImages=true&isHighlight=true&q=painting`
-            )
-          : await getCachedIDs(
-              "met_general",
-              `${MET_API}/search?hasImages=true&q=painting`
-            );
-
-        const objectID =
-          ids[Math.floor(Math.random() * ids.length)];
-
-        const artRes = await fetch(
-          proxied(`${MET_API}/objects/${objectID}`)
-        );
-        const art = await artRes.json();
-
-        if (
-          art.classification !== "Paintings" ||
-          !art.primaryImageSmall
-        ) {
-          return loadArtwork();
-        }
+        const pages = Object.values(data.query.pages);
+        const pick = pages[Math.floor(Math.random() * pages.length)];
+        const info = pick.imageinfo[0];
 
         document.getElementById("title").textContent =
-          art.title || "Untitled";
+          info.extmetadata.ObjectName?.value || pick.title.replace("File:", "");
 
         document.getElementById("artist").textContent =
-          art.artistDisplayName || "Unknown artist";
-
-        document.getElementById("museum").textContent =
-          "The Metropolitan Museum of Art";
+          info.extmetadata.Artist?.value?.replace(/<[^>]*>/g, "") || "Unknown artist";
 
         img.onload = () => {
           loader.style.display = "none";
           img.style.opacity = "1";
         };
 
-        img.onerror = () => {
-          loader.textContent = "Image failed to load";
-        };
+        img.src = info.url;
 
-        img.src = art.primaryImageSmall;
-
-      } catch (err) {
-        console.error(err);
+      } catch (e) {
         loader.textContent = "Artwork unavailable";
+        console.error(e);
       }
     }
 
-    loadArtwork();
+    loadPainting();
   </script>
 </body>
 </html>
