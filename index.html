@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Artab Museum Startpage</title>
 
   <style>
@@ -10,11 +10,13 @@
       margin: 0;
       height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       background: url("bg.jpg") center / cover no-repeat fixed;
       font-family: "Segoe UI", sans-serif;
       color: #eee;
+      overflow: hidden;
     }
 
     .gallery {
@@ -59,10 +61,34 @@
       border-radius: 3px;
       font-size: 14px;
       min-width: 280px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
 
     .caption strong {
       font-size: 15px;
+    }
+
+    /* Footer links */
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      display: flex;
+      gap: 22px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .footer a {
+      text-decoration: none;
+      color: #111;
+      font-weight: 500;
+      font-size: 15px;
+      transition: color 0.3s ease, transform 0.2s ease;
+    }
+
+    .footer a:hover {
+      color: #333;
+      transform: translateY(-1px);
     }
   </style>
 </head>
@@ -81,6 +107,13 @@
     </div>
   </div>
 
+  <!-- Footer links restored -->
+  <div class="footer">
+    <a href="https://www.youtube.com" target="_self">YouTube</a>
+    <a href="https://www.instagram.com" target="_self">Instagram</a>
+    <a href="https://chat.openai.com" target="_self">ChatGPT</a>
+  </div>
+
   <script>
     const PROXY =
       "https://met-proxy.dinu-wahane.workers.dev/?url=";
@@ -88,8 +121,27 @@
     const MET_API =
       "https://collectionapi.metmuseum.org/public/collection/v1";
 
+    const HIGHLIGHT_WEIGHT = 0.3; // 30% famous bias
+
     function proxied(url) {
       return PROXY + encodeURIComponent(url);
+    }
+
+    async function getCachedIDs(key, url) {
+      const cached = localStorage.getItem(key);
+      if (cached) return JSON.parse(cached);
+
+      const res = await fetch(proxied(url));
+      const data = await res.json();
+
+      if (!data.objectIDs || !data.objectIDs.length) {
+        throw new Error("No artworks found");
+      }
+
+      // Trim for performance
+      const trimmed = data.objectIDs.slice(0, 2000);
+      localStorage.setItem(key, JSON.stringify(trimmed));
+      return trimmed;
     }
 
     async function loadArtwork() {
@@ -100,22 +152,21 @@
       img.style.opacity = "0";
 
       try {
-        // 1) Search paintings
-        const searchRes = await fetch(
-          proxied(`${MET_API}/search?hasImages=true&q=painting`)
-        );
-        const searchData = await searchRes.json();
+        const useHighlight = Math.random() < HIGHLIGHT_WEIGHT;
 
-        const ids = searchData.objectIDs;
-        if (!ids || !ids.length) {
-          throw new Error("No artworks found");
-        }
+        const ids = useHighlight
+          ? await getCachedIDs(
+              "met_highlights",
+              `${MET_API}/search?hasImages=true&isHighlight=true&q=painting`
+            )
+          : await getCachedIDs(
+              "met_general",
+              `${MET_API}/search?hasImages=true&q=painting`
+            );
 
-        // 2) Pick random artwork
         const objectID =
           ids[Math.floor(Math.random() * ids.length)];
 
-        // 3) Fetch artwork details
         const artRes = await fetch(
           proxied(`${MET_API}/objects/${objectID}`)
         );
@@ -125,10 +176,9 @@
           art.classification !== "Paintings" ||
           !art.primaryImageSmall
         ) {
-          return loadArtwork(); // try another
+          return loadArtwork();
         }
 
-        // 4) Update caption immediately
         document.getElementById("title").textContent =
           art.title || "Untitled";
 
@@ -138,7 +188,6 @@
         document.getElementById("museum").textContent =
           "The Metropolitan Museum of Art";
 
-        // 5) Load image
         img.onload = () => {
           loader.style.display = "none";
           img.style.opacity = "1";
