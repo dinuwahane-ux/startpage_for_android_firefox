@@ -1,20 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Artab Museum Startpage</title>
 
   <style>
     body {
       margin: 0;
-      padding: 0;
       height: 100vh;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      background: url('bg.jpg') center/cover no-repeat fixed;
+      background: url("bg.jpg") center / cover no-repeat fixed;
       font-family: "Segoe UI", sans-serif;
       color: #eee;
       overflow: hidden;
@@ -22,7 +20,7 @@
 
     .gallery {
       text-align: center;
-      animation: fadeIn 1.2s ease-in-out;
+      animation: fadeIn 1.2s ease;
     }
 
     @keyframes fadeIn {
@@ -31,20 +29,13 @@
     }
 
     .frame {
-      display: inline-block;
-      background-color: #111;
+      position: relative;
+      background: #111;
       border: 10px solid #000;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       max-width: 90vw;
       max-height: 65vh;
       overflow: hidden;
-      animation: fadeInArt 1.5s ease;
-      position: relative;
-    }
-
-    @keyframes fadeInArt {
-      from { opacity: 0; transform: scale(0.97); }
-      to   { opacity: 1; transform: scale(1); }
     }
 
     .frame img {
@@ -52,7 +43,7 @@
       height: auto;
       display: block;
       opacity: 0;
-      transition: opacity 0.7s ease;
+      transition: opacity 0.8s ease;
     }
 
     .loader {
@@ -61,22 +52,20 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 14px;
       color: #aaa;
+      font-size: 14px;
       background: #111;
     }
 
     .caption {
-      background: rgba(40, 40, 40, 0.9);
-      color: #eee;
-      font-size: 14px;
-      text-align: left;
-      margin: 10px auto 0;
+      background: rgba(40,40,40,0.9);
+      margin-top: 10px;
       padding: 10px 14px;
+      text-align: left;
       display: inline-block;
       border-radius: 3px;
+      font-size: 14px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      animation: fadeIn 1.2s ease-in-out;
     }
 
     .caption strong {
@@ -88,21 +77,13 @@
       bottom: 20px;
       display: flex;
       gap: 22px;
-      justify-content: center;
-      align-items: center;
     }
 
     .footer a {
       text-decoration: none;
       color: #111;
-      font-weight: 500;
       font-size: 15px;
-      transition: color 0.3s ease, transform 0.2s ease;
-    }
-
-    .footer a:hover {
-      color: #333;
-      transform: translateY(-1px);
+      font-weight: 500;
     }
   </style>
 </head>
@@ -122,66 +103,83 @@
   </div>
 
   <div class="footer">
-    <a href="https://www.youtube.com" target="_self">YouTube</a>
-    <a href="https://www.instagram.com" target="_self">Instagram</a>
-    <a href="https://chat.openai.com" target="_self">ChatGPT</a>
+    <a href="https://www.youtube.com">YouTube</a>
+    <a href="https://www.instagram.com">Instagram</a>
+    <a href="https://chat.openai.com">ChatGPT</a>
   </div>
 
   <script>
-    async function loadRandomArt(retries = 6) {
+    const departments = [
+      11, // European Paintings
+      9,  // Drawings & Prints
+      21, // Modern Art
+      1,  // American Decorative Arts (paintings included)
+      6   // Asian Art
+    ];
+
+    let cachedIDs = [];
+
+    async function fetchIDs() {
+      const dept =
+        departments[Math.floor(Math.random() * departments.length)];
+
+      const url =
+        `https://collectionapi.metmuseum.org/public/collection/v1/search` +
+        `?hasImages=true&isPublicDomain=true&medium=Paintings&departmentId=${dept}`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data.objectIDs || !data.objectIDs.length) {
+        throw new Error("No objects found");
+      }
+
+      cachedIDs = data.objectIDs;
+    }
+
+    async function loadRandomArt() {
       const loader = document.getElementById("loader");
       const img = document.getElementById("artImage");
 
       loader.style.display = "flex";
       img.style.opacity = "0";
-      img.onload = null;
-      img.onerror = null;
 
       try {
-        const randomPage = Math.floor(Math.random() * 100) + 1;
-
-        const url =
-          "https://api.artic.edu/api/v1/artworks/search" +
-          "?q=painting&has_image=1" +
-          "&fields=id,title,artist_title,image_id,credit_line" +
-          `&limit=1&page=${randomPage}`;
-
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!data.data?.length || !data.data[0].image_id) {
-          if (retries > 0) return loadRandomArt(retries - 1);
-          throw new Error("No valid artwork found");
+        if (!cachedIDs.length) {
+          await fetchIDs();
         }
 
-        const art = data.data[0];
-        const imgUrl =
-          `https://www.artic.edu/iiif/2/${art.image_id}/full/843,/0/default.jpg`;
+        const randomIndex = Math.floor(Math.random() * cachedIDs.length);
+        const objectID = cachedIDs.splice(randomIndex, 1)[0];
+
+        const res = await fetch(
+          `https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectID}`
+        );
+        const art = await res.json();
+
+        if (!art.primaryImageSmall) {
+          return loadRandomArt();
+        }
 
         document.getElementById("title").textContent =
           art.title || "Untitled";
+
         document.getElementById("artist").textContent =
-          art.artist_title || "Unknown artist";
+          art.artistDisplayName || "Unknown artist";
+
         document.getElementById("museum").textContent =
-          art.credit_line || "Art Institute of Chicago";
+          "The Metropolitan Museum of Art";
 
         img.onload = () => {
           loader.style.display = "none";
           img.style.opacity = "1";
         };
 
-        img.onerror = () => {
-          loader.textContent = "Image failed to load";
-        };
+        img.src = art.primaryImageSmall;
 
-        img.src = imgUrl;
-
-      } catch (err) {
-        console.error(err);
+      } catch (e) {
+        console.error(e);
         loader.textContent = "Artwork unavailable";
-        document.getElementById("title").textContent = "Artwork unavailable";
-        document.getElementById("artist").textContent = "";
-        document.getElementById("museum").textContent = "";
       }
     }
 
