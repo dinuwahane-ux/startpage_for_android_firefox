@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artab Museum Startpage</title>
+
   <style>
     body {
       margin: 0;
@@ -26,7 +27,7 @@
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     .frame {
@@ -42,13 +43,21 @@
 
     @keyframes fadeInArt {
       from { opacity: 0; transform: scale(0.97); }
-      to { opacity: 1; transform: scale(1); }
+      to   { opacity: 1; transform: scale(1); }
     }
 
     .frame img {
       width: 100%;
       height: auto;
       display: block;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+
+    .loader {
+      padding: 24px;
+      font-size: 14px;
+      color: #aaa;
     }
 
     .caption {
@@ -68,7 +77,6 @@
       font-size: 15px;
     }
 
-    /* Footer links */
     .footer {
       position: absolute;
       bottom: 20px;
@@ -92,19 +100,21 @@
     }
   </style>
 </head>
+
 <body>
   <div class="gallery">
     <div class="frame">
-      <img id="artImage" src="" alt="Loading artwork...">
+      <div id="loader" class="loader">Loading artwork…</div>
+      <img id="artImage" alt="">
     </div>
-    <div class="caption" id="captionBox">
-      <strong id="title">Loading...</strong><br>
+
+    <div class="caption">
+      <strong id="title">Loading…</strong><br>
       <span id="artist"></span><br>
       <span id="museum"></span>
     </div>
   </div>
 
-  <!-- Minimal footer links -->
   <div class="footer">
     <a href="https://www.youtube.com" target="_self">YouTube</a>
     <a href="https://www.instagram.com" target="_self">Instagram</a>
@@ -112,28 +122,58 @@
   </div>
 
   <script>
-    async function loadRandomArt() {
+    async function loadRandomArt(retries = 6) {
+      const loader = document.getElementById("loader");
+      const img = document.getElementById("artImage");
+
       try {
-        const randomPage = Math.floor(Math.random() * 200) + 1;
-        const searchUrl = `https://api.artic.edu/api/v1/artworks/search?q=painting&fields=id,title,artist_title,image_id,credit_line&limit=1&page=${randomPage}`;
-        const searchResponse = await fetch(searchUrl);
-        const searchData = await searchResponse.json();
+        loader.style.display = "block";
+        img.style.opacity = "0";
 
-        if (!searchData.data.length) throw new Error("No artwork found.");
+        const randomPage = Math.floor(Math.random() * 100) + 1;
 
-        const artwork = searchData.data[0];
-        if (!artwork.image_id) throw new Error("No image available.");
+        const url =
+          "https://api.artic.edu/api/v1/artworks/search" +
+          "?q=painting&has_image=1" +
+          "&fields=id,title,artist_title,image_id,credit_line" +
+          `&limit=1&page=${randomPage}`;
 
-        const imageUrl = `https://www.artic.edu/iiif/2/${artwork.image_id}/full/843,/0/default.jpg`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-        document.getElementById("artImage").src = imageUrl;
-        document.getElementById("title").textContent = artwork.title || "Untitled";
-        document.getElementById("artist").textContent = artwork.artist_title || "Unknown artist";
-        document.getElementById("museum").textContent = artwork.credit_line || "Art Institute of Chicago";
+        if (!data.data?.length || !data.data[0].image_id) {
+          if (retries > 0) return loadRandomArt(retries - 1);
+          throw new Error("No valid artwork found");
+        }
+
+        const art = data.data[0];
+        const imgUrl =
+          `https://www.artic.edu/iiif/2/${art.image_id}/full/843,/0/default.jpg`;
+
+        img.onload = () => {
+          loader.style.display = "none";
+          img.style.opacity = "1";
+        };
+
+        img.onerror = () => {
+          if (retries > 0) loadRandomArt(retries - 1);
+        };
+
+        img.src = imgUrl;
+
+        document.getElementById("title").textContent =
+          art.title || "Untitled";
+
+        document.getElementById("artist").textContent =
+          art.artist_title || "Unknown artist";
+
+        document.getElementById("museum").textContent =
+          art.credit_line || "Art Institute of Chicago";
 
       } catch (err) {
         console.error(err);
-        document.getElementById("title").textContent = "Error loading art";
+        loader.textContent = "Artwork unavailable";
+        document.getElementById("title").textContent = "Artwork unavailable";
         document.getElementById("artist").textContent = "";
         document.getElementById("museum").textContent = "";
       }
