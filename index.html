@@ -21,40 +21,48 @@
     text-align: center;
   }
 
-  /* OUTER WOOD FRAME */
+  /* WOOD FRAME */
   .frame-outer {
     display: inline-block;
     padding: 18px;
-    background:
-      linear-gradient(135deg, #3b2a1a, #5a3b21, #3b2a1a);
+    background: linear-gradient(135deg, #3a2716, #6b4423, #3a2716);
     border-radius: 6px;
-    box-shadow:
-      0 20px 40px rgba(0,0,0,0.6),
-      inset 0 0 0 2px rgba(255,255,255,0.05);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.6);
   }
 
-  /* INNER MAT / GLASS GAP */
+  /* GLASS + MAT */
   .frame-inner {
+    position: relative;
     padding: 10px;
-    background: linear-gradient(
-      135deg,
-      rgba(255,255,255,0.15),
-      rgba(255,255,255,0.05)
-    );
-    box-shadow:
-      inset 0 0 8px rgba(255,255,255,0.25),
-      inset 0 0 2px rgba(0,0,0,0.6);
+    background: #111;
   }
 
-  /* IMAGE ITSELF */
-  .painting {
+  /* Glass overlay */
+  .frame-inner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        120deg,
+        rgba(255,255,255,0.25) 0%,
+        rgba(255,255,255,0.05) 20%,
+        rgba(255,255,255,0.02) 60%,
+        rgba(255,255,255,0.15) 100%
+      );
+    pointer-events: none;
+    box-shadow:
+      inset 0 0 12px rgba(255,255,255,0.25),
+      inset 0 0 2px rgba(255,255,255,0.4);
+  }
+
+  img.painting {
     display: block;
     max-width: 85vw;
     max-height: 65vh;
     width: auto;
     height: auto;
-    box-shadow:
-      0 0 0 1px rgba(0,0,0,0.6);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.7);
     background: #111;
   }
 
@@ -66,6 +74,7 @@
     border-radius: 4px;
     font-size: 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    max-width: 80vw;
   }
 
   .caption strong {
@@ -89,85 +98,95 @@
 </head>
 
 <body>
-  <div class="gallery">
-    <div class="frame-outer">
-      <div class="frame-inner">
-        <img id="artImage" class="painting" alt="">
-      </div>
-    </div>
-
-    <div class="caption">
-      <strong id="title">Loading…</strong><br>
-      <span id="artist"></span>
+<div class="gallery">
+  <div class="frame-outer">
+    <div class="frame-inner">
+      <img id="artImage" class="painting" alt="">
     </div>
   </div>
 
-  <div class="footer">
-    <a href="https://www.youtube.com">YouTube</a>
-    <a href="https://www.instagram.com">Instagram</a>
-    <a href="https://chat.openai.com">ChatGPT</a>
+  <div class="caption">
+    <strong id="title">Loading…</strong><br>
+    <span id="artist"></span>
   </div>
+</div>
+
+<div class="footer">
+  <a href="https://www.youtube.com">YouTube</a>
+  <a href="https://www.instagram.com">Instagram</a>
+  <a href="https://chat.openai.com">ChatGPT</a>
+</div>
 
 <script>
-  const CATEGORIES = [
-    "Paintings_by_Vincent_van_Gogh",
-    "Paintings_by_Claude_Monet",
-    "Paintings_by_Rembrandt",
-    "Paintings_by_Johannes_Vermeer",
-    "Impressionist_paintings",
-    "Post-Impressionist_paintings",
-    "Renaissance_paintings"
-  ];
+const CATEGORIES = [
+  "Paintings_by_Vincent_van_Gogh",
+  "Paintings_by_Claude_Monet",
+  "Paintings_by_Paul_Cézanne",
+  "Paintings_by_Rembrandt",
+  "Impressionist_paintings",
+  "Post-Impressionist_paintings",
+  "Renaissance_paintings"
+];
 
-  function cleanHTML(html) {
-    if (!html) return "";
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    return div.textContent || div.innerText || "";
+function cleanHTML(html) {
+  if (!html) return "";
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || div.innerText || "";
+}
+
+function cleanTitle(text) {
+  if (!text) return "";
+  return text
+    .replace(/label QS:.*/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function loadPainting() {
+  const img = document.getElementById("artImage");
+
+  const category =
+    CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+
+  const url =
+    "https://commons.wikimedia.org/w/api.php" +
+    "?origin=*" +
+    "&action=query" +
+    "&generator=categorymembers" +
+    `&gcmtitle=Category:${category}` +
+    "&gcmtype=file" +
+    "&gcmlimit=50" +
+    "&prop=imageinfo" +
+    "&iiprop=url|extmetadata" +
+    "&iiurlwidth=1600" +
+    "&format=json";
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const pages = Object.values(data.query.pages);
+    const pick = pages[Math.floor(Math.random() * pages.length)];
+    const info = pick.imageinfo[0];
+
+    const title =
+      cleanTitle(cleanHTML(info.extmetadata.ImageDescription?.value)) ||
+      cleanTitle(pick.title.replace("File:", ""));
+
+    document.getElementById("title").textContent = title;
+    document.getElementById("artist").textContent =
+      cleanHTML(info.extmetadata.Artist?.value) || "Unknown artist";
+
+    img.src = info.thumburl || info.url;
+
+  } catch (e) {
+    document.getElementById("title").textContent = "Artwork unavailable";
+    console.error(e);
   }
+}
 
-  async function loadPainting() {
-    const img = document.getElementById("artImage");
-
-    const category =
-      CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-
-    const url =
-      "https://commons.wikimedia.org/w/api.php" +
-      "?origin=*" +
-      "&action=query" +
-      "&generator=categorymembers" +
-      `&gcmtitle=Category:${category}` +
-      "&gcmtype=file" +
-      "&gcmlimit=50" +
-      "&prop=imageinfo" +
-      "&iiprop=url|extmetadata" +
-      "&format=json";
-
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-
-      const pages = Object.values(data.query.pages);
-      const pick = pages[Math.floor(Math.random() * pages.length)];
-      const info = pick.imageinfo[0];
-
-      document.getElementById("title").textContent =
-        cleanHTML(info.extmetadata.ObjectName?.value) ||
-        pick.title.replace("File:", "");
-
-      document.getElementById("artist").textContent =
-        cleanHTML(info.extmetadata.Artist?.value) || "Unknown artist";
-
-      img.src = info.url;
-
-    } catch (e) {
-      document.getElementById("title").textContent = "Artwork unavailable";
-      console.error(e);
-    }
-  }
-
-  loadPainting();
+loadPainting();
 </script>
 </body>
 </html>
