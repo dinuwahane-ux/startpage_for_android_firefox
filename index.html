@@ -1,103 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Artab Museum Startpage</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Artab Museum Startpage</title>
 
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background: url("bg.jpg") center / cover no-repeat fixed;
-      font-family: "Segoe UI", sans-serif;
-      color: #eee;
-      overflow: hidden;
-    }
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    background: url("bg.jpg") center / cover no-repeat fixed;
+    font-family: "Segoe UI", sans-serif;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-    .gallery {
-      text-align: center;
-    }
+  .gallery {
+    text-align: center;
+  }
 
-    .frame {
-      position: relative;
-      background: #111;
-      border: 10px solid #000;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-      width: 90vw;
-      height: 65vh;
-      overflow: hidden;
-    }
+  /* OUTER WOOD FRAME */
+  .frame-outer {
+    display: inline-block;
+    padding: 18px;
+    background:
+      linear-gradient(135deg, #3b2a1a, #5a3b21, #3b2a1a);
+    border-radius: 6px;
+    box-shadow:
+      0 20px 40px rgba(0,0,0,0.6),
+      inset 0 0 0 2px rgba(255,255,255,0.05);
+  }
 
-    /* IMPORTANT: no cropping */
-    .frame img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      display: block;
-      opacity: 0;
-      transition: opacity 0.6s ease;
-      background: #111;
-    }
+  /* INNER MAT / GLASS GAP */
+  .frame-inner {
+    padding: 10px;
+    background: linear-gradient(
+      135deg,
+      rgba(255,255,255,0.15),
+      rgba(255,255,255,0.05)
+    );
+    box-shadow:
+      inset 0 0 8px rgba(255,255,255,0.25),
+      inset 0 0 2px rgba(0,0,0,0.6);
+  }
 
-    .loader {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #aaa;
-      font-size: 14px;
-      background: #111;
-    }
+  /* IMAGE ITSELF */
+  .painting {
+    display: block;
+    max-width: 85vw;
+    max-height: 65vh;
+    width: auto;
+    height: auto;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.6);
+    background: #111;
+  }
 
-    .caption {
-      background: rgba(40,40,40,0.9);
-      margin-top: 10px;
-      padding: 10px 14px;
-      text-align: left;
-      display: inline-block;
-      border-radius: 3px;
-      font-size: 14px;
-      min-width: 280px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
+  .caption {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: rgba(40,40,40,0.85);
+    display: inline-block;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
 
-    .caption strong {
-      font-size: 15px;
-    }
+  .caption strong {
+    font-size: 15px;
+  }
 
-    .footer {
-      position: absolute;
-      bottom: 20px;
-      display: flex;
-      gap: 22px;
-    }
+  .footer {
+    position: absolute;
+    bottom: 20px;
+    display: flex;
+    gap: 22px;
+  }
 
-    .footer a {
-      text-decoration: none;
-      color: #111;
-      font-size: 15px;
-      font-weight: 500;
-    }
-  </style>
+  .footer a {
+    text-decoration: none;
+    color: #111;
+    font-size: 15px;
+    font-weight: 500;
+  }
+</style>
 </head>
 
 <body>
   <div class="gallery">
-    <div class="frame">
-      <div id="loader" class="loader">Loading artwork…</div>
-      <img id="artImage" alt="">
+    <div class="frame-outer">
+      <div class="frame-inner">
+        <img id="artImage" class="painting" alt="">
+      </div>
     </div>
 
     <div class="caption">
       <strong id="title">Loading…</strong><br>
-      <span id="artist"></span><br>
-      <span>Wikimedia Commons</span>
+      <span id="artist"></span>
     </div>
   </div>
 
@@ -107,86 +108,66 @@
     <a href="https://chat.openai.com">ChatGPT</a>
   </div>
 
-  <script>
-    /* Categories chosen to bias toward praised paintings */
-    const CATEGORIES = [
-      "Paintings_by_Vincent_van_Gogh",
-      "Paintings_by_Claude_Monet",
-      "Paintings_by_Rembrandt",
-      "Paintings_by_Johannes_Vermeer",
-      "Impressionist_paintings",
-      "Post-Impressionist_paintings",
-      "Renaissance_paintings"
-    ];
+<script>
+  const CATEGORIES = [
+    "Paintings_by_Vincent_van_Gogh",
+    "Paintings_by_Claude_Monet",
+    "Paintings_by_Rembrandt",
+    "Paintings_by_Johannes_Vermeer",
+    "Impressionist_paintings",
+    "Post-Impressionist_paintings",
+    "Renaissance_paintings"
+  ];
 
-    /* Strip Wikimedia HTML safely */
-    function cleanHTML(html) {
-      if (!html) return "";
-      const div = document.createElement("div");
-      div.innerHTML = html;
-      return div.textContent || div.innerText || "";
+  function cleanHTML(html) {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
+  }
+
+  async function loadPainting() {
+    const img = document.getElementById("artImage");
+
+    const category =
+      CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+
+    const url =
+      "https://commons.wikimedia.org/w/api.php" +
+      "?origin=*" +
+      "&action=query" +
+      "&generator=categorymembers" +
+      `&gcmtitle=Category:${category}` +
+      "&gcmtype=file" +
+      "&gcmlimit=50" +
+      "&prop=imageinfo" +
+      "&iiprop=url|extmetadata" +
+      "&format=json";
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+
+      const pages = Object.values(data.query.pages);
+      const pick = pages[Math.floor(Math.random() * pages.length)];
+      const info = pick.imageinfo[0];
+
+      document.getElementById("title").textContent =
+        cleanHTML(info.extmetadata.ObjectName?.value) ||
+        pick.title.replace("File:", "");
+
+      document.getElementById("artist").textContent =
+        cleanHTML(info.extmetadata.Artist?.value) || "Unknown artist";
+
+      img.src = info.url;
+
+    } catch (e) {
+      document.getElementById("title").textContent = "Artwork unavailable";
+      console.error(e);
     }
+  }
 
-    async function loadPainting() {
-      const loader = document.getElementById("loader");
-      const img = document.getElementById("artImage");
-
-      loader.style.display = "flex";
-      img.style.opacity = "0";
-
-      const category =
-        CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-
-      const url =
-        "https://commons.wikimedia.org/w/api.php" +
-        "?origin=*" +
-        "&action=query" +
-        "&generator=categorymembers" +
-        `&gcmtitle=Category:${category}` +
-        "&gcmtype=file" +
-        "&gcmlimit=50" +
-        "&prop=imageinfo" +
-        "&iiprop=url|extmetadata" +
-        "&format=json";
-
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!data.query || !data.query.pages) {
-          throw new Error("No pages returned");
-        }
-
-        const pages = Object.values(data.query.pages);
-        const pick = pages[Math.floor(Math.random() * pages.length)];
-        const info = pick.imageinfo[0];
-
-        document.getElementById("title").textContent =
-          cleanHTML(info.extmetadata.ObjectName?.value) ||
-          pick.title.replace("File:", "");
-
-        document.getElementById("artist").textContent =
-          cleanHTML(info.extmetadata.Artist?.value) ||
-          "Unknown artist";
-
-        img.onload = () => {
-          loader.style.display = "none";
-          img.style.opacity = "1";
-        };
-
-        img.onerror = () => {
-          loader.textContent = "Image failed to load";
-        };
-
-        img.src = info.url;
-
-      } catch (err) {
-        console.error(err);
-        loader.textContent = "Artwork unavailable";
-      }
-    }
-
-    loadPainting();
-  </script>
+  loadPainting();
+</script>
 </body>
 </html>
