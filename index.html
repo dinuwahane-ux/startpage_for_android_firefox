@@ -1,185 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Artab Museum Startpage</title>
-
-<style>
-  body {
-    margin: 0;
-    height: 100vh;
-    background: url("bg.jpg") center / cover no-repeat fixed;
-    font-family: "Segoe UI", sans-serif;
-    color: #eee;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .gallery {
-    text-align: center;
-  }
-
-  /* Slim wooden frame */
-  .frame-outer {
-    display: inline-block;
-    padding: 10px;
-    background: linear-gradient(
-      135deg,
-      #4a2f18,
-      #6a4424,
-      #4a2f18
-    );
-    border-radius: 5px;
-    box-shadow: 0 14px 32px rgba(0,0,0,0.55);
-  }
-
-  /* PURE TRANSPARENT SPACER (no glass, no effects) */
-  .frame-inner {
-    padding: 6px;
-    background: rgba(255,255,255,0.05); /* 5% opacity, shows wall */
-  }
-
-  img.painting {
-    display: block;
-    max-width: 85vw;
-    max-height: 65vh;
-    width: auto;
-    height: auto;
-    background: #111;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.65);
-  }
-
-  .caption {
-    margin-top: 14px;
-    padding: 10px 14px;
-    background: rgba(40,40,40,0.85);
-    display: inline-block;
-    border-radius: 4px;
-    font-size: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-    max-width: 80vw;
-  }
-
-  .caption strong {
-    font-size: 15px;
-  }
-
-  .footer {
-    position: absolute;
-    bottom: 20px;
-    display: flex;
-    gap: 22px;
-  }
-
-  .footer a {
-    text-decoration: none;
-    color: #111;
-    font-size: 15px;
-    font-weight: 500;
-  }
-</style>
-</head>
-
-<body>
-<div class="gallery">
-  <div class="frame-outer">
-    <div class="frame-inner">
-      <img id="artImage" class="painting" alt="">
-    </div>
-  </div>
-
-  <div class="caption">
-    <strong id="title">Loading…</strong><br>
-    <span id="artist"></span>
-  </div>
-</div>
-
-<div class="footer">
-  <a href="https://www.youtube.com">YouTube</a>
-  <a href="https://www.instagram.com">Instagram</a>
-  <a href="https://chat.openai.com">ChatGPT</a>
-</div>
-
+<meta charset="utf-8">
+<title>Random APOD</title>
 <script>
-const CATEGORIES = [
-  "Paintings_by_Vincent_van_Gogh",
-  "Paintings_by_Claude_Monet",
-  "Paintings_by_Paul_Cézanne",
-  "Paintings_by_Rembrandt",
-  "Impressionist_paintings",
-  "Post-Impressionist_paintings",
-  "Renaissance_paintings"
-];
-
-function cleanHTML(html) {
-  if (!html) return "";
-  const div = document.createElement("div");
-  div.innerHTML = html;
-  return div.textContent || div.innerText || "";
+function daysInMonth(month, year) {
+    return new Date(year, month, 0).getDate();
 }
 
-function cleanFilenameTitle(filename) {
-  return filename
-    .replace(/^File:/i, "")
-    .replace(/\.[^.]+$/, "")
-    .replace(/[_\-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function extractTitle(info, pick) {
-  const desc = cleanHTML(info.extmetadata?.ImageDescription?.value || "");
-  if (desc && desc.length < 120) {
-    return desc;
-  }
-  return cleanFilenameTitle(pick.title);
-}
+window.onload = function() {
+    const yy = randomInt(15, 25);
+    const mm = randomInt(1, 12);
 
-async function loadPainting() {
-  const img = document.getElementById("artImage");
+    const fullYear = 2000 + yy;
+    const dd = randomInt(1, daysInMonth(mm, fullYear));
 
-  const category =
-    CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+    const url =
+        "https://apod.nasa.gov/apod/ap" +
+        String(yy).padStart(2, "0") +
+        String(mm).padStart(2, "0") +
+        String(dd).padStart(2, "0") +
+        ".html";
 
-  const url =
-    "https://commons.wikimedia.org/w/api.php" +
-    "?origin=*" +
-    "&action=query" +
-    "&generator=categorymembers" +
-    `&gcmtitle=Category:${category}` +
-    "&gcmtype=file" +
-    "&gcmlimit=50" +
-    "&prop=imageinfo" +
-    "&iiprop=url|extmetadata" +
-    "&iiurlwidth=1600" +
-    "&format=json";
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-
-    const pages = Object.values(data.query.pages);
-    const pick = pages[Math.floor(Math.random() * pages.length)];
-    const info = pick.imageinfo[0];
-
-    document.getElementById("title").textContent =
-      extractTitle(info, pick) || "Untitled";
-
-    document.getElementById("artist").textContent =
-      cleanHTML(info.extmetadata?.Artist?.value) || "Unknown artist";
-
-    img.src = info.thumburl || info.url;
-
-  } catch (e) {
-    document.getElementById("title").textContent = "Artwork unavailable";
-    document.getElementById("artist").textContent = "";
-    console.error(e);
-  }
-}
-
-loadPainting();
+    location.replace(url);
+};
 </script>
+</head>
+<body>
 </body>
 </html>
