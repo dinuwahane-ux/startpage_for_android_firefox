@@ -1,35 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>Random APOD</title>
 <script>
-function daysInMonth(month, year) {
-    return new Date(year, month, 0).getDate();
-}
+(function () {
 
-function randomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+    const start = new Date("2015-01-01");
+    const end   = new Date("2025-12-31");
 
-window.onload = function() {
-    const yy = randomInt(15, 25);
-    const mm = randomInt(1, 12);
+    const date = new Date(
+        start.getTime() +
+        Math.random() * (end.getTime() - start.getTime())
+    );
 
-    const fullYear = 2000 + yy;
-    const dd = randomInt(1, daysInMonth(mm, fullYear));
+    const yy = String(date.getFullYear()).slice(-2);
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
 
-    const url =
-        "https://apod.nasa.gov/apod/ap" +
-        String(yy).padStart(2, "0") +
-        String(mm).padStart(2, "0") +
-        String(dd).padStart(2, "0") +
-        ".html";
+    location.replace(
+        `https://apod.nasa.gov/apod/ap${yy}${mm}${dd}.html`
+    );
 
-    location.replace(url);
-};
+})();
 </script>
 </head>
-<body>
-</body>
+<body></body>
 </html>
