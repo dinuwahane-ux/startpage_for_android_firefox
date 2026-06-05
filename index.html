@@ -13,7 +13,7 @@
     <style>
         :root {
             --green: #22c55e;
-            --white: #fff;
+            --white: #ffffff;
         }
 
         * {
@@ -37,11 +37,6 @@
 
         #frame {
             width: min(900px, 95vw);
-
-            padding: 0;
-            border: none;
-            background: transparent;
-            box-shadow: none;
         }
 
         #cat {
@@ -52,34 +47,31 @@
             object-fit: contain;
         }
 
-        #datetime {
-            margin-top: 20px;
+        /* Shared box styling */
+        .box {
+            margin-top: 18px;
 
-            font-size: 24px;
-            letter-spacing: 0.5px;
+            width: 420px;
+            max-width: 90vw;
 
-            color: var(--white);
+            padding: 12px 20px;
 
             border: 1px solid var(--green);
             border-radius: 12px;
 
-            padding: 10px 18px;
             background: #0a0a0a;
+
+            font-size: 20px;
+            text-align: center;
         }
 
         #apod-link {
-            margin-top: 18px;
-
             color: var(--white);
             text-decoration: none;
 
-            border: 1px solid var(--green);
-            border-radius: 12px;
-
-            padding: 10px 18px;
-            background: #0a0a0a;
-
-            transition: background 0.2s ease, transform 0.2s ease;
+            transition:
+                background 0.2s ease,
+                transform 0.2s ease;
         }
 
         #apod-link:hover {
@@ -97,10 +89,11 @@
         />
     </div>
 
-    <div id="datetime"></div>
+    <div id="datetime" class="box"></div>
 
     <a
         id="apod-link"
+        class="box"
         href="https://apod.nasa.gov/apod/astropix.html"
         target="_blank"
         rel="noopener noreferrer"
@@ -112,17 +105,20 @@
         function updateDateTime() {
             const now = new Date();
 
-            const formatted = now.toLocaleString(undefined, {
-                weekday: "long",
-                year: "numeric",
+            const date = now.toLocaleDateString(undefined, {
                 month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit"
+                day: "numeric"
             });
 
-            document.getElementById("datetime").textContent = formatted;
+            const time = now.toLocaleTimeString(undefined, {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
+            });
+
+            document.getElementById("datetime").textContent =
+                `${date} ${time}`;
         }
 
         updateDateTime();
