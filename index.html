@@ -1,75 +1,132 @@
-:root {
-    --green: #22c55e;
-    --white: #fff;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cat Dashboard</title>
 
-body {
-    background: #000;
-    color: var(--white);
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+    />
 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    <style>
+        :root {
+            --green: #22c55e;
+            --white: #fff;
+        }
 
-    font-family: "JetBrains Mono", monospace;
-}
+        * {
+            box-sizing: border-box;
+        }
 
-/* Remove cat frame */
-#frame {
-    padding: 0;
-    border: none;
-    background: transparent;
-    box-shadow: none;
+        body {
+            margin: 0;
+            min-height: 100vh;
 
-    width: min(900px, 75vw);
-}
+            background: #000;
+            color: var(--white);
 
-#cat {
-    display: block;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
 
-    width: 100%;
-    max-height: 65vh;
+            font-family: "JetBrains Mono", monospace;
+        }
 
-    object-fit: contain;
-}
+        #frame {
+            width: min(900px, 95vw);
 
-/* Date and time */
-#datetime {
-    margin-top: 20px;
+            padding: 0;
+            border: none;
+            background: transparent;
+            box-shadow: none;
+        }
 
-    font-size: 24px;
-    letter-spacing: 0.5px;
+        #cat {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 65vh;
+            object-fit: contain;
+        }
 
-    color: var(--white);
+        #datetime {
+            margin-top: 20px;
 
-    border: 1px solid var(--green);
-    border-radius: 12px;
-    padding: 10px 18px;
+            font-size: 24px;
+            letter-spacing: 0.5px;
 
-    background: #0a0a0a;
-}
+            color: var(--white);
 
-/* APOD link */
-#apod-link {
-    margin-top: 18px;
+            border: 1px solid var(--green);
+            border-radius: 12px;
 
-    color: var(--white);
-    text-decoration: none;
+            padding: 10px 18px;
+            background: #0a0a0a;
+        }
 
-    border: 1px solid var(--green);
-    border-radius: 12px;
+        #apod-link {
+            margin-top: 18px;
 
-    padding: 10px 18px;
+            color: var(--white);
+            text-decoration: none;
 
-    background: #0a0a0a;
+            border: 1px solid var(--green);
+            border-radius: 12px;
 
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease;
-}
+            padding: 10px 18px;
+            background: #0a0a0a;
 
-#apod-link:hover {
-    background: rgba(34, 197, 94, 0.12);
-    transform: translateY(-1px);
-}
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        #apod-link:hover {
+            background: rgba(34, 197, 94, 0.12);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div id="frame">
+        <img
+            id="cat"
+            src="https://cataas.com/cat"
+            alt="Random Cat"
+        />
+    </div>
+
+    <div id="datetime"></div>
+
+    <a
+        id="apod-link"
+        href="https://apod.nasa.gov/apod/astropix.html"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        NASA Astronomy Picture of the Day
+    </a>
+
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+
+            const formatted = now.toLocaleString(undefined, {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            });
+
+            document.getElementById("datetime").textContent = formatted;
+        }
+
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+</html>
