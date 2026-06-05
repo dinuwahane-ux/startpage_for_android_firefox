@@ -1,9 +1,56 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>New Tab</title>
+
+<style>
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: sans-serif;
+}
+
+#cat {
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+}
+
+#apod-link {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    text-decoration: none;
+    background: rgba(0,0,0,0.5);
+    padding: 10px 16px;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+}
+
+#apod-link:hover {
+    text-decoration: underline;
+}
+</style>
+</head>
+<body>
+
+<img id="cat" src="https://cataas.com/cat" alt="Random cat">
+
+<a href="#" id="apod-link">
+    Wanna see a cool astrophoto?
+</a>
+
 <script>
-(function () {
+document.getElementById("apod-link").addEventListener("click", function (e) {
+    e.preventDefault();
 
     const start = new Date("2015-01-01");
     const end   = new Date("2025-12-31");
@@ -17,12 +64,10 @@
     const mm = String(date.getMonth() + 1).padStart(2, "0");
     const dd = String(date.getDate()).padStart(2, "0");
 
-    location.replace(
-        `https://apod.nasa.gov/apod/ap${yy}${mm}${dd}.html`
-    );
-
-})();
+    location.href =
+        `https://apod.nasa.gov/apod/ap${yy}${mm}${dd}.html`;
+});
 </script>
-</head>
-<body></body>
+
+</body>
 </html>
